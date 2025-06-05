@@ -208,7 +208,7 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 
 		// GROUP BY clause (for aggregations)
 		if (components.aggregation.type !== 'none') {
-			sql += this.buildGroupBy(components.aggregation, components.department ? false : true);
+			sql += this.buildGroupBy(components.aggregation, true); // Always include department since we select d.name
 		}
 
 		// ORDER BY clause
@@ -267,6 +267,42 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 	private extractDateRange(query: string, explicitRange?: string): { type: string; sql: string; parameters?: any[] } {
 		if (explicitRange) {
 			return this.parseDateRange(explicitRange);
+		}
+
+		// Days patterns - Handle "last X days" 
+		const lastDaysMatch = query.match(/last (\d+) days?/i);
+		if (lastDaysMatch) {
+			const days = parseInt(lastDaysMatch[1]);
+			return {
+				type: `last_${days}_days`,
+				sql: `m.metric_date >= CURRENT_DATE - INTERVAL '${days} days'`,
+				parameters: []
+			};
+		}
+
+		// Recent patterns
+		if (query.includes('recent') || query.includes('latest')) {
+			return {
+				type: 'recent',
+				sql: "m.metric_date >= CURRENT_DATE - INTERVAL '7 days'",
+				parameters: []
+			};
+		}
+
+		// Week patterns
+		if (query.includes('last week')) {
+			return {
+				type: 'last_week',
+				sql: "m.metric_date >= DATE_TRUNC('week', CURRENT_DATE - INTERVAL '1 week') AND m.metric_date < DATE_TRUNC('week', CURRENT_DATE)",
+				parameters: []
+			};
+		}
+		if (query.includes('this week')) {
+			return {
+				type: 'this_week',
+				sql: "m.metric_date >= DATE_TRUNC('week', CURRENT_DATE)",
+				parameters: []
+			};
 		}
 
 		// Quarter patterns
@@ -334,6 +370,7 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 	 * Extract aggregation type from query
 	 */
 	private extractAggregation(query: string): { type: string; function: string } {
+		// Explicit aggregation requests
 		if (query.includes('total') || query.includes('sum')) {
 			return { type: 'sum', function: 'SUM' };
 		}
@@ -345,6 +382,23 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 		}
 		if (query.includes('growth') || query.includes('trend')) {
 			return { type: 'growth', function: 'SUM' }; // We'll calculate growth separately
+		}
+
+		// Auto-aggregate for summary/overview requests
+		if (query.includes('summary') || query.includes('overview')) {
+			return { type: 'avg', function: 'AVG' };
+		}
+
+		// Auto-aggregate for multi-day requests to reduce data volume
+		if (query.match(/last \d+ days?/i)) {
+			const daysMatch = query.match(/last (\d+) days?/i);
+			if (daysMatch) {
+				const days = parseInt(daysMatch[1]);
+				// For longer periods, default to average to reduce noise
+				if (days > 7) {
+					return { type: 'avg', function: 'AVG' };
+				}
+			}
 		}
 
 		return { type: 'none', function: '' };
@@ -396,7 +450,9 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 		const limitPatterns = [
 			{ pattern: /top (\d+)/, multiplier: 1 },
 			{ pattern: /first (\d+)/, multiplier: 1 },
-			{ pattern: /(\d+) (top|best|worst)/, multiplier: 1 }
+			{ pattern: /(\d+) (top|best|worst)/, multiplier: 1 },
+			{ pattern: /limit (\d+)/, multiplier: 1 },
+			{ pattern: /show (\d+)/, multiplier: 1 }
 		];
 
 		for (const { pattern } of limitPatterns) {
@@ -407,11 +463,33 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 		}
 
 		// Default limits based on query type
-		if (query.includes('top') || query.includes('best')) {
+		if (query.includes('top') || query.includes('best') || query.includes('worst')) {
 			return 10;
 		}
 
-		return 0; // No limit
+		// Smart defaults to prevent overwhelming responses
+		if (query.includes('summary') || query.includes('overview')) {
+			return 20;
+		}
+
+		// For detailed queries with date ranges, limit to manageable amounts
+		if (query.match(/last \d+ days?/i)) {
+			const daysMatch = query.match(/last (\d+) days?/i);
+			if (daysMatch) {
+				const days = parseInt(daysMatch[1]);
+				// Allow roughly 5-10 metrics per day max
+				return Math.min(days * 10, 100);
+			}
+		}
+
+		// For specific department queries, reasonable limit
+		if (query.includes('sales') || query.includes('finance') || query.includes('hr') || 
+		    query.includes('devrel') || query.includes('events') || query.includes('compliance')) {
+			return 50;
+		}
+
+		// Default reasonable limit to prevent overwhelming responses
+		return 25;
 	}
 
 	/**
@@ -441,6 +519,11 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 	 */
 	private buildOrderBy(comparison: { type: string; direction: string }, aggregation: { type: string }): string {
 		if (comparison.type === 'none') {
+			// If we have aggregation, we can't order by metric_date since it's not in GROUP BY
+			if (aggregation.type !== 'none') {
+				const orderColumn = aggregation.type === 'growth' ? 'growth_rate' : 'aggregated_value';
+				return ` ORDER BY ${orderColumn} DESC`;
+			}
 			return " ORDER BY m.metric_date DESC";
 		}
 
