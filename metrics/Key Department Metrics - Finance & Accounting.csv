@@ -1,0 +1,15 @@
+Metric,Duration,Source
+Cash available,present value,tbd
+Cash Burn Rate,"30, 90, 365",Excel
+Runway Remaining,"30, 90, 365",Excel
+Fundraising Pipeline Progress,"30, 90, 365",Excel/Carta
+Month-End Close Time,"30, 90, 365",Gmail/Excel
+Error Rate in Financial Statements,"30, 90, 365",Excel
+Expenditures (actual vs total),"30, 90, 365",Excel
+Expenditures growth rate,"30, 90, 365",Excel
+Total Debt,"30, 90, 365",Excel
+Total Vendor Obligations,"30, 90, 365",Excel
+Average cost per employee,"30, 90, 365",Excel
+"Major categories expenditures (payroll, admin, advertising, marketing, etc )","30, 90, 365",Excel
+Expenditures by department,"30, 90, 365",Excel
+Software subscriptions,"30, 90, 365",everywhere

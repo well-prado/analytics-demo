@@ -1,0 +1,12 @@
+Metric,Duration,Source
+Events hosted,"30, 90, 365",Luma
+Total event sign ups,"30, 90, 365",Luma
+Avg event sign ups per event,"30, 90, 365",Luma
+Total attendees,"30, 90, 365",Luma
+Avg attendees per event,"30, 90, 365",Luma
+Event sign ups vs attendees,"30, 90, 365",Luma
+GitHub views,"30, 90, 365",Linktree / custom link
+Platform views,"30, 90, 365",Linktree / custom link
+Platform sign ups,"30, 90, 365",Linktree / custom link
+Sales opportunities generated,"30, 90, 365",Calendly
+Money spent,"30, 90, 365",Stripe

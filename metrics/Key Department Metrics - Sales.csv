@@ -1,0 +1,17 @@
+Metric,Duration,Source
+Total pipeline,Present Value,Attio
+Channel partner pipeline,Present Value,Attio
+Pipeline growth,"30, 90, 365",Attio
+Startups in pipeline,Present Value,Attio
+Startup Pipeline growth,"30, 90, 365",Attio
+Mid-market in pipeline,Present Value,Attio
+Mid-market Pipeline growth,"30, 90, 365",Attio
+Enterprise in pipeline,Present Value,Attio
+Enterprise Pipeline growth,"30, 90, 365",Attio
+Active POCs,Present Value,Attio
+Potential POCs,Present Value,Attio
+Hot Accounts,Present Value,Attio
+Meetings done,"7, 30, 90",Calendly
+Potential ARR,Present Value,Attio
+Actual ARR,Present Value,Attio
+Event pipeline,Present Value,Attio

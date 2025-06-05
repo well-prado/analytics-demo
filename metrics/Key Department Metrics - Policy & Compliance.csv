@@ -1,0 +1,12 @@
+Metric,Duration,Source
+Training Completion Rate,"30, 90, 365",Vanta
+Policy Acknowledgement Rate,"30, 90, 365",Vanta
+Third-Party Risk Assessment Completion,"30, 90, 365",Vanta
+Total Number of New Vulnerabilities Identified,"30, 90, 365",Vanta/GitHub
+Average Time to Resolve a Vulnerability (Critical vs High vs Medium vs Low),"30, 90, 365",Vanta/Jira/GitHub
+% of Vulnerabilities Resolved Past Due Date,"30, 90, 365",Vanta
+% of Vulnerabilities Resolved Within SLA,"30, 90, 365",Vanta
+Open Vulnerabilities by Severity,"30, 90, 365",Vanta
+% of Assets Scanned for Vulnerabilities,"30, 90, 365",Vanta
+Audit Readiness,Present Value,Vanta
+Missed SLA by Department,"30, 90, 365",Vanta

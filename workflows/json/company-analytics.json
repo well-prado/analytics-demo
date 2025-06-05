@@ -1,0 +1,162 @@
+{
+	"name": "Dynamic Company Analytics",
+	"description": "Claude-powered business analytics with zero hardcoding - transforms natural language into SQL queries",
+	"version": "1.0.0",
+	"trigger": {
+		"http": {
+			"method": "*",
+			"path": "/:operation?",
+			"accept": "application/json"
+		}
+	},
+	"steps": [
+		{
+			"name": "route-operation",
+			"node": "@nanoservice-ts/if-else",
+			"type": "module"
+		}
+	],
+	"nodes": {
+		"route-operation": {
+			"conditions": [
+				{
+					"type": "if",
+					"steps": [
+						{
+							"name": "analytics-ui",
+							"node": "analytics-ui",
+							"type": "module"
+						}
+					],
+					"condition": "ctx.request.method.toLowerCase() === \"get\" && (ctx.request.params.operation === undefined || ctx.request.params.operation === \"ui\")"
+				},
+				{
+					"type": "if",
+					"steps": [
+						{
+							"name": "setup-database-config",
+							"node": "database-config",
+							"type": "module"
+						},
+						{
+							"name": "discover-schema",
+							"node": "schema-discovery",
+							"type": "module"
+						},
+						{
+							"name": "response-schema",
+							"node": "mapper",
+							"type": "module"
+						}
+					],
+					"condition": "ctx.request.method.toLowerCase() === \"get\" && ctx.request.params.operation === \"schema\""
+				},
+				{
+					"type": "if",
+					"steps": [
+						{
+							"name": "setup-database-config",
+							"node": "database-config",
+							"type": "module"
+						},
+						{
+							"name": "discover-schema",
+							"node": "schema-discovery",
+							"type": "module"
+						},
+						{
+							"name": "generate-query",
+							"node": "business-context-query",
+							"type": "module"
+						},
+						{
+							"name": "execute-query",
+							"node": "postgres-query",
+							"type": "module"
+						},
+						{
+							"name": "format-response",
+							"node": "mapper",
+							"type": "module"
+						}
+					],
+					"condition": "ctx.request.method.toLowerCase() === \"post\" && ctx.request.params.operation === \"query\""
+				},
+				{
+					"type": "else",
+					"steps": [
+						{
+							"name": "method-not-allowed",
+							"node": "error",
+							"type": "module"
+						}
+					]
+				}
+			]
+		},
+		"analytics-ui": {
+			"inputs": {}
+		},
+		"setup-database-config": {
+			"inputs": {
+				"validate_connection": true
+			}
+		},
+		"discover-schema": {
+			"inputs": {
+				"include_statistics": true,
+				"include_relationships": false
+			}
+		},
+		"generate-query": {
+			"inputs": {
+				"query": "${ctx.request.body.query}",
+				"department": "${ctx.request.body.department}",
+				"date_range": "${ctx.request.body.date_range}",
+				"debug": "${ctx.request.body.debug}"
+			}
+		},
+		"execute-query": {
+			"inputs": {
+				"host": "${ctx.vars.database_config.host}",
+				"port": "${ctx.vars.database_config.port}",
+				"database": "${ctx.vars.database_config.database}",
+				"user": "${ctx.vars.database_config.user}",
+				"password": "${ctx.vars.database_config.password}",
+				"query": "${ctx.vars.generated_query}"
+			}
+		},
+		"format-response": {
+			"inputs": {
+				"model": {
+					"query": "${ctx.request.body.query}",
+					"generated_sql": "${ctx.vars.generated_query}",
+					"explanation": "js/ctx.response.data.explanation",
+					"matched_patterns": "js/ctx.response.data.matched_patterns",
+					"results": "js/ctx.response.data.data",
+					"total_results": "${ctx.response.data.total}",
+					"department_filter": "js/ctx.response.data.department_filter",
+					"date_filter": "js/ctx.response.data.date_filter",
+					"timestamp": "js/new Date().toISOString()"
+				}
+			}
+		},
+		"response-schema": {
+			"inputs": {
+				"model": {
+					"schema": "js/ctx.response.data",
+					"available_departments": "js/ctx.response.data.tables.find(t => t.table_name === 'departments')?.columns || []",
+					"available_metrics": "js/ctx.response.data.tables.find(t => t.table_name === 'metrics')?.columns || []",
+					"total_tables": "${ctx.response.data.total_tables}",
+					"discovery_timestamp": "${ctx.response.data.discovery_timestamp}"
+				}
+			}
+		},
+		"method-not-allowed": {
+			"inputs": {
+				"message": "Method not allowed. Supported operations: GET /company-analytics (UI), GET /company-analytics/schema (Schema), POST /company-analytics/query (Query)",
+				"code": 405
+			}
+		}
+	}
+} 

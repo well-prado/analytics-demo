@@ -1,0 +1,32 @@
+{
+    "name": "Auto-generated MCP Server",
+    "description": "MCP server with tools generated from nanoservice nodes and workflows",
+    "version": "1.0.0",
+    "trigger": {
+      "http": {
+        "method": "*",
+        "path": "/:mcp_operation?",
+        "accept": "application/json"
+      }
+    },
+    "steps": [
+      {
+        "name": "mcp-endpoint",
+        "node": "mcp-server",
+        "type": "module"
+      }
+    ],
+    "nodes": {
+      "mcp-endpoint": {
+        "inputs": {
+          "debug_mode": true,
+          "discover_nodes": true,
+          "discover_workflows": true,
+          "workflows_directory": "/Users/wellingtonprado/Projects/Deskree/nano-notion-feeder/workflows",
+          "excluded_workflows": ["auto-mcp-server", "chatgpt-interface", "chatgpt-ui", "mcp-client", "list_available_tools", "empty", "email-signature-generator", "chain-tools", "feedback"],
+          "excluded_nodes": ["mcp-server", "error", "mapper", "openai"],
+          "tools": []
+        }
+      }
+    }
+  }

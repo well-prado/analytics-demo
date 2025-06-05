@@ -1,0 +1,8 @@
+Metric,Duration,Source
+Employee Turnover Rate,Last 6 month,Rippling
+Employee Satisfaction Score,Last 3 month,Surveys
+New Hires,Last 3 month,Rippling
+Employee vs. Contractors count ,Last year,Rippling
+Employee/Contractors count by Dep,Last year ,Rippling
+Vacation days used by employee,quarter,Rippling
+Vacation days used by department,quarter,Rippling
