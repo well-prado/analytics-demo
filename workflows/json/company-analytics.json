@@ -14,6 +14,14 @@
 						"type": "string",
 						"description": "Natural language business question (e.g., 'Show me last month DevRel metrics')"
 					},
+					"prompt": {
+						"type": "string",
+						"description": "Alternative field name for natural language business question"
+					},
+					"data": {
+						"type": "string",
+						"description": "Alternative field name for natural language business question (MCP compatibility)"
+					},
 					"department": {
 						"type": "string",
 						"description": "Optional: Specific department filter (sales, finance, devrel, hr, events, compliance)",
@@ -29,7 +37,11 @@
 						"description": "Include debug information about pattern matching"
 					}
 				},
-				"required": ["query"],
+				"anyOf": [
+					{"required": ["query"]},
+					{"required": ["prompt"]},
+					{"required": ["data"]}
+				],
 				"additionalProperties": false
 			}
 		}
@@ -78,7 +90,7 @@
 		},
 		"process-query": {
 			"inputs": {
-				"query": "${ctx.request.body.query || ctx.request.body.prompt}",
+				"query": "${ctx.request.body.query || ctx.request.body.prompt || ctx.request.body.data}",
 				"department": "js/ctx.request.body.department || undefined",
 				"date_range": "js/ctx.request.body.date_range || undefined",
 				"debug": "js/Boolean(ctx.request.body.debug)"
@@ -98,7 +110,7 @@
 		"format-response": {
 			"inputs": {
 				"model": {
-					"query": "${ctx.request.body.query}",
+					"query": "${ctx.request.body.query || ctx.request.body.prompt || ctx.request.body.data}",
 					"sql_generated": "${ctx.vars.generated_query}",
 					"explanation": "${ctx.vars.explanation || 'SQL generated from natural language'}",
 					"matched_patterns": "${ctx.vars.matched_patterns || 'Department and date patterns detected'}",
