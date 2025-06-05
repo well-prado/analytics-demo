@@ -142,5 +142,5 @@ dist
 images/examples/*
 
 # Memory bank and metrics
-memory-bank
-metrics
+memory-bank/
+metrics/
