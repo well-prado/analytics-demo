@@ -140,7 +140,3 @@ dist
 .DS_store
 
 images/examples/*
-
-# Memory bank and metrics
-memory-bank/
-metrics/
