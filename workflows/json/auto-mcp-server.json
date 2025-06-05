@@ -22,7 +22,7 @@
           "debug_mode": true,
           "discover_nodes": true,
           "discover_workflows": true,
-          "workflows_directory": "/Users/wellingtonprado/Projects/Deskree/nano-notion-feeder/workflows",
+          "workflows_directory": "/Users/wellprado/Projects/Deskree/analytics-demo/workflows",
           "excluded_workflows": ["auto-mcp-server", "chatgpt-interface", "chatgpt-ui", "mcp-client", "list_available_tools", "empty", "email-signature-generator", "chain-tools", "feedback"],
           "excluded_nodes": ["mcp-server", "error", "mapper", "openai"],
           "tools": []

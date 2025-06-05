@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database for Analytics
+  analytics-db:
+    image: postgres:15
+    container_name: analytics-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: company_analytics
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - analytics_postgres_data:/var/lib/postgresql/data
+      - ./scripts:/docker-entrypoint-initdb.d
+    networks:
+      - analytics-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d company_analytics"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Analytics API Service
+  analytics-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: analytics-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+      - "9091:9091"  # Metrics port
+    environment:
+      # Database Configuration
+      DB_HOST: analytics-db
+      DB_PORT: 5432
+      DB_NAME: company_analytics
+      DB_USER: postgres
+      DB_PASSWORD: password123
+      # App Configuration
+      NODE_ENV: development
+      DEBUG: true
+    volumes:
+      - ./dist:/usr/src/app/dist
+      - ./workflows:/usr/src/app/workflows
+      - ./public:/usr/src/app/public
+      - ./.env:/usr/src/app/.env
+    networks:
+      - analytics-network
+    depends_on:
+      analytics-db:
+        condition: service_healthy
+    develop:
+      watch:
+        - action: sync
+          path: ./dist
+          target: /usr/src/app/dist
+        - action: sync
+          path: ./workflows
+          target: /usr/src/app/workflows
+        - action: sync
+          path: ./public
+          target: /usr/src/app/public
+        - action: rebuild
+          path: ./package.json
+        - action: rebuild
+          path: ./tsconfig.json
+
+  # Database Administration (Optional)
+  adminer:
+    image: adminer:latest
+    container_name: analytics-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: analytics-db
+    networks:
+      - analytics-network
+    depends_on:
+      analytics-db:
+        condition: service_healthy
+
+volumes:
+  analytics_postgres_data:
+    driver: local
+
+networks:
+  analytics-network:
+    driver: bridge 

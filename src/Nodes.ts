@@ -8,6 +8,7 @@ import ExampleNodes from "./nodes/examples";
 import DatabaseConfigNode from "./nodes/analytics/database-config";
 import SchemaDiscoveryNode from "./nodes/analytics/schema-discovery";
 import BusinessContextQueryNode from "./nodes/analytics/business-context-query";
+import PostgresAnalyticsQuery from "./nodes/analytics/postgres-analytics";
 
 const nodes: {
 	[key: string]: NodeBase;
@@ -19,6 +20,7 @@ const nodes: {
 	"database-config": new DatabaseConfigNode(),
 	"schema-discovery": new SchemaDiscoveryNode(),
 	"business-context-query": new BusinessContextQueryNode(),
+	"postgres-analytics": new PostgresAnalyticsQuery(),
 };
 
 export default nodes;

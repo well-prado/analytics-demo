@@ -70,7 +70,8 @@ export default class BusinessContextQueryNode extends NanoService<BusinessQueryI
 				},
 				debug: { 
 					type: "boolean", 
-					description: "Include pattern matching debug information" 
+					description: "Include pattern matching debug information",
+					default: false
 				}
 			},
 			required: ["query"]

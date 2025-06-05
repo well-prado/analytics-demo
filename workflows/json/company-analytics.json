@@ -1,161 +1,112 @@
 {
 	"name": "Dynamic Company Analytics",
-	"description": "Claude-powered business analytics with zero hardcoding - transforms natural language into SQL queries",
+	"description": "🔍 Business Intelligence Tool: Transform natural language questions into SQL queries and retrieve real company metrics. Supports 6 departments (Sales, Finance, DevRel, HR, Events, Compliance) with 74+ different metrics including revenue, pipeline, employee satisfaction, social media growth, and more. Ask questions like: 'Show me last month's sales metrics', 'What were our Q4 DevRel results?', 'Compare HR satisfaction across departments', or 'Give me our total pipeline numbers'. Automatically detects departments, date ranges, aggregations, and generates appropriate SQL queries. Zero hardcoding - fully dynamic schema discovery.",
 	"version": "1.0.0",
 	"trigger": {
 		"http": {
-			"method": "*",
-			"path": "/:operation?",
-			"accept": "application/json"
+			"method": "POST",
+			"path": "/",
+			"accept": "application/json",
+			"schema": {
+				"type": "object",
+				"properties": {
+					"query": {
+						"type": "string",
+						"description": "Natural language business question (e.g., 'Show me last month DevRel metrics')"
+					},
+					"department": {
+						"type": "string",
+						"description": "Optional: Specific department filter (sales, finance, devrel, hr, events, compliance)",
+						"enum": ["sales", "finance", "devrel", "hr", "events", "compliance"]
+					},
+					"date_range": {
+						"type": "string", 
+						"description": "Optional: Date range filter (q1, q4, last_month, this_year)",
+						"enum": ["q1", "q2", "q3", "q4", "last_month", "this_month", "this_year"]
+					},
+					"debug": {
+						"type": "boolean",
+						"description": "Include debug information about pattern matching"
+					}
+				},
+				"required": ["query"],
+				"additionalProperties": false
+			}
 		}
 	},
 	"steps": [
 		{
-			"name": "route-operation",
-			"node": "@nanoservice-ts/if-else",
+			"name": "setup-database",
+			"node": "database-config",
+			"type": "module"
+		},
+		{
+			"name": "discover-schema",
+			"node": "schema-discovery",
+			"type": "module"
+		},
+		{
+			"name": "process-query",
+			"node": "business-context-query",
+			"type": "module"
+		},
+		{
+			"name": "execute-query",
+			"node": "postgres-analytics",
+			"type": "module"
+		},
+		{
+			"name": "format-response",
+			"node": "mapper",
 			"type": "module"
 		}
 	],
 	"nodes": {
-		"route-operation": {
-			"conditions": [
-				{
-					"type": "if",
-					"steps": [
-						{
-							"name": "analytics-ui",
-							"node": "analytics-ui",
-							"type": "module"
-						}
-					],
-					"condition": "ctx.request.method.toLowerCase() === \"get\" && (ctx.request.params.operation === undefined || ctx.request.params.operation === \"ui\")"
-				},
-				{
-					"type": "if",
-					"steps": [
-						{
-							"name": "setup-database-config",
-							"node": "database-config",
-							"type": "module"
-						},
-						{
-							"name": "discover-schema",
-							"node": "schema-discovery",
-							"type": "module"
-						},
-						{
-							"name": "response-schema",
-							"node": "mapper",
-							"type": "module"
-						}
-					],
-					"condition": "ctx.request.method.toLowerCase() === \"get\" && ctx.request.params.operation === \"schema\""
-				},
-				{
-					"type": "if",
-					"steps": [
-						{
-							"name": "setup-database-config",
-							"node": "database-config",
-							"type": "module"
-						},
-						{
-							"name": "discover-schema",
-							"node": "schema-discovery",
-							"type": "module"
-						},
-						{
-							"name": "generate-query",
-							"node": "business-context-query",
-							"type": "module"
-						},
-						{
-							"name": "execute-query",
-							"node": "postgres-query",
-							"type": "module"
-						},
-						{
-							"name": "format-response",
-							"node": "mapper",
-							"type": "module"
-						}
-					],
-					"condition": "ctx.request.method.toLowerCase() === \"post\" && ctx.request.params.operation === \"query\""
-				},
-				{
-					"type": "else",
-					"steps": [
-						{
-							"name": "method-not-allowed",
-							"node": "error",
-							"type": "module"
-						}
-					]
-				}
-			]
-		},
-		"analytics-ui": {
-			"inputs": {}
-		},
-		"setup-database-config": {
+		"setup-database": {
 			"inputs": {
-				"validate_connection": true
+				"host": "localhost",
+				"port": 5432,
+				"database": "company_analytics",
+				"user": "postgres",
+				"password": "password123"
 			}
 		},
 		"discover-schema": {
 			"inputs": {
-				"include_statistics": true,
-				"include_relationships": false
+				"include_stats": true
 			}
 		},
-		"generate-query": {
+		"process-query": {
 			"inputs": {
-				"query": "${ctx.request.body.query}",
-				"department": "${ctx.request.body.department}",
-				"date_range": "${ctx.request.body.date_range}",
-				"debug": "${ctx.request.body.debug}"
+				"query": "${ctx.request.body.query || ctx.request.body.prompt}",
+				"department": "js/ctx.request.body.department || undefined",
+				"date_range": "js/ctx.request.body.date_range || undefined",
+				"debug": "js/Boolean(ctx.request.body.debug)"
 			}
 		},
 		"execute-query": {
 			"inputs": {
-				"host": "${ctx.vars.database_config.host}",
-				"port": "${ctx.vars.database_config.port}",
-				"database": "${ctx.vars.database_config.database}",
-				"user": "${ctx.vars.database_config.user}",
-				"password": "${ctx.vars.database_config.password}",
-				"query": "${ctx.vars.generated_query}"
+				"host": "localhost",
+				"port": 5432,
+				"database": "company_analytics",
+				"user": "postgres",
+				"password": "password123",
+				"query": "${ctx.vars.generated_query}",
+				"parameters": "js/ctx.vars.query_parameters || []"
 			}
 		},
 		"format-response": {
 			"inputs": {
 				"model": {
 					"query": "${ctx.request.body.query}",
-					"generated_sql": "${ctx.vars.generated_query}",
-					"explanation": "js/ctx.response.data.explanation",
-					"matched_patterns": "js/ctx.response.data.matched_patterns",
+					"sql_generated": "${ctx.vars.generated_query}",
+					"explanation": "${ctx.vars.explanation || 'SQL generated from natural language'}",
+					"matched_patterns": "${ctx.vars.matched_patterns || 'Department and date patterns detected'}",
 					"results": "js/ctx.response.data.data",
 					"total_results": "${ctx.response.data.total}",
-					"department_filter": "js/ctx.response.data.department_filter",
-					"date_filter": "js/ctx.response.data.date_filter",
+					"execution_time": "${ctx.response.data.execution_time}",
 					"timestamp": "js/new Date().toISOString()"
 				}
-			}
-		},
-		"response-schema": {
-			"inputs": {
-				"model": {
-					"schema": "js/ctx.response.data",
-					"available_departments": "js/ctx.response.data.tables.find(t => t.table_name === 'departments')?.columns || []",
-					"available_metrics": "js/ctx.response.data.tables.find(t => t.table_name === 'metrics')?.columns || []",
-					"total_tables": "${ctx.response.data.total_tables}",
-					"discovery_timestamp": "${ctx.response.data.discovery_timestamp}"
-				}
-			}
-		},
-		"method-not-allowed": {
-			"inputs": {
-				"message": "Method not allowed. Supported operations: GET /company-analytics (UI), GET /company-analytics/schema (Schema), POST /company-analytics/query (Query)",
-				"code": 405
 			}
 		}
 	}

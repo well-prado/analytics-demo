@@ -17,7 +17,14 @@
     "infra:dev": "rimraf ./dist && tsc && copyfiles -u 1 src/nodes/**/*.html src/nodes/**/*.md dist/ && docker compose --file ./infra/docker-compose.yml up --build --watch",
     "infra:build": "tsc --watch -p tsconfig.json --diagnostics",
     "seed": "ts-node scripts/seed.ts",
-    "seed:docker": "docker-compose exec analytics-db npm run seed"
+    "seed:docker": "docker-compose -f docker-compose.analytics.yml exec analytics-db npm run seed",
+    "test:system": "node scripts/test-system.js",
+    "docker:up": "docker-compose -f docker-compose.analytics.yml up -d",
+    "docker:down": "docker-compose -f docker-compose.analytics.yml down",
+    "docker:build": "docker-compose -f docker-compose.analytics.yml up --build -d",
+    "docker:logs": "docker-compose -f docker-compose.analytics.yml logs -f",
+    "docker:seed": "docker-compose -f docker-compose.analytics.yml exec analytics-api npm run seed",
+    "docker:reset": "docker-compose -f docker-compose.analytics.yml down -v && docker-compose -f docker-compose.analytics.yml up --build -d"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.8.0",
